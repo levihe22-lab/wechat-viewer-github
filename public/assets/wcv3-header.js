@@ -1,4 +1,4 @@
-export const HEADER_SIZE=80;
+export const HEADER_SIZE=128;
 export const MAGIC='WCV3';
 export const VERSION=3;
 export const ITERATIONS=600000;
