@@ -7,85 +7,59 @@ export const UI_MESSAGES = Object.freeze({
   IMPORTING: '正在当前页面内存中验证本地加密包…',
   CLEARING: '正在锁定并清除当前页面会话…',
   FAILURE: '无法验证此本地包。请重新选择文件并输入密码。',
-  UNLOCKED: '解锁成功。仅可显示通过认证的本地包内容。',
 });
+
+const TRANSIENT_SELECTORS = Object.freeze([
+  '#search-panel',
+  '#date-panel',
+  '#image-overlay',
+  '#video-overlay',
+]);
 
 export class UiRenderer {
   constructor(doc = document) {
     this.doc = doc;
-    this.lockedView = requireElement(doc, '#locked-view');
-    this.unlockedView = requireElement(doc, '#unlocked-view');
     this.status = requireElement(doc, '#status');
     this.fileInput = requireElement(doc, '#package-file');
     this.passwordInput = requireElement(doc, '#package-password');
     this.unlockButton = requireElement(doc, '#unlock-button');
     this.cancelButton = requireElement(doc, '#cancel-button');
-    this.authenticatedContent = requireElement(doc, '#authenticated-content');
+    this.lockedView = optionalElement(doc, '#locked-view');
+    this.appView = optionalElement(doc, '#app-view');
+    this.transientSurfaces = TRANSIENT_SELECTORS
+      .map((sel) => optionalElement(doc, sel))
+      .filter(Boolean);
   }
 
   render(state, message) {
     switch (state) {
       case SESSION_STATE.LOCKED:
-        this.renderLocked(message);
+        this.status.textContent = safeMessage(message, UI_MESSAGES.READY);
+        this.setImportControls(false);
+        this.applySurfaces(true, false);
         break;
       case SESSION_STATE.IMPORTING:
-        this.renderImporting();
+        this.status.textContent = UI_MESSAGES.IMPORTING;
+        this.setImportControls(true);
+        this.applySurfaces(true, false);
         break;
       case SESSION_STATE.UNLOCKED:
-        this.renderUnlocked();
+        this.setImportControls(false);
+        this.applySurfaces(false, true);
         break;
       case SESSION_STATE.CLEARING:
-        this.renderClearing();
+        this.status.textContent = UI_MESSAGES.CLEARING;
+        this.setImportControls(true);
+        this.applySurfaces(true, false);
         break;
       default:
         throw new Error('UI_STATE_INVALID');
     }
   }
 
-  renderLocked(message = UI_MESSAGES.READY) {
-    this.clearAuthenticatedContent();
-    this.lockedView.hidden = false;
-    this.unlockedView.hidden = true;
-    this.status.textContent = safeMessage(message, UI_MESSAGES.READY);
-    this.setImportControls(false);
-  }
-
-  renderImporting() {
-    this.clearAuthenticatedContent();
-    this.lockedView.hidden = false;
-    this.unlockedView.hidden = true;
-    this.status.textContent = UI_MESSAGES.IMPORTING;
-    this.setImportControls(true);
-  }
-
-  renderUnlocked() {
-    this.lockedView.hidden = true;
-    this.unlockedView.hidden = false;
-    this.status.textContent = '';
-    this.authenticatedContent.textContent = UI_MESSAGES.UNLOCKED;
-    this.setImportControls(false);
-  }
-
-  renderClearing() {
-    this.clearAuthenticatedContent();
-    this.lockedView.hidden = false;
-    this.unlockedView.hidden = true;
-    this.status.textContent = UI_MESSAGES.CLEARING;
-    this.setImportControls(true);
-  }
-
-  renderFailure() {
-    this.renderLocked(UI_MESSAGES.FAILURE);
-  }
-
   clearInputs() {
     this.fileInput.value = '';
     this.passwordInput.value = '';
-  }
-
-  clearAuthenticatedContent() {
-    this.authenticatedContent.replaceChildren();
-    this.authenticatedContent.textContent = '';
   }
 
   setImportControls(busy) {
@@ -95,12 +69,24 @@ export class UiRenderer {
     this.cancelButton.hidden = !busy;
     this.cancelButton.disabled = false;
   }
+
+  applySurfaces(showLocked, showApp) {
+    if (this.lockedView) this.lockedView.hidden = !showLocked;
+    if (this.appView) this.appView.hidden = !showApp;
+    for (const el of this.transientSurfaces) {
+      el.hidden = true;
+    }
+  }
 }
 
 function requireElement(doc, selector) {
   const element = doc.querySelector(selector);
   if (!element) throw new Error('UI_ELEMENT_MISSING');
   return element;
+}
+
+function optionalElement(doc, selector) {
+  return doc.querySelector(selector);
 }
 
 function safeMessage(message, fallback) {

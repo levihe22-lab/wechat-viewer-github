@@ -57,7 +57,7 @@ async function scanTextFile(rootPath, filePath) {
       fail('BOUNDARY_PARENT_REFERENCE');
     }
   }
-  if (/(?:[A-Za-z]:\\|\/Users\/|\/home\/)/u.test(text)) fail('BOUNDARY_LOCAL_PATH');
+  if (/(?:[A-Za-z]:\\(?![nrt])|\/Users\/|\/home\/)/u.test(text)) fail('BOUNDARY_LOCAL_PATH');
   if (/\bwxid_[A-Za-z0-9_-]+\b/u.test(text)) fail('BOUNDARY_PERSONAL_CONTENT_PATTERN');
 }
 

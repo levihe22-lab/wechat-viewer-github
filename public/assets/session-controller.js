@@ -30,6 +30,10 @@ export class SessionController {
     return this.#state;
   }
 
+  get session() {
+    return this.#session;
+  }
+
   snapshot() {
     return Object.freeze({
       state: this.#state,

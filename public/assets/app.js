@@ -1,14 +1,28 @@
 import { SessionController } from './session-controller.js';
-import { UiRenderer } from './ui-renderer.js';
+import { UI_MESSAGES, UiRenderer } from './ui-renderer.js';
 import { createWcv3Session } from './wcv3-session-factory.js';
 import { bindLifecycle } from './lifecycle-events.js';
+import { initViewer, destroyViewer } from './viewer.js';
 
 export function createApp(doc = document, options = {}) {
   const renderer = new UiRenderer(doc);
+
   const controller = new SessionController(renderer, {
-    createSession: createWcv3Session,
-    ...options,
+    createSession: options.createSession || createWcv3Session,
+    onTransition: (from, to) => {
+      if (to === 'unlocked') {
+        const viewerInit = options.initViewer || initViewer;
+        viewerInit(controller.session).catch(() => {
+          controller.clear('viewer-init-failure', UI_MESSAGES.FAILURE);
+        });
+      }
+      if (to === 'locked' || to === 'clearing') {
+        const viewerDestroy = options.destroyViewer || destroyViewer;
+        viewerDestroy();
+      }
+    },
   });
+
   const fileInput = doc.querySelector('#package-file');
   const passwordInput = doc.querySelector('#package-password');
 
@@ -28,7 +42,7 @@ export function createApp(doc = document, options = {}) {
     controller.lock();
   });
 
-  bindLifecycle(controller);
+  bindLifecycle(controller, options.lifecycleTarget);
 
   return Object.freeze({ controller, renderer });
 }

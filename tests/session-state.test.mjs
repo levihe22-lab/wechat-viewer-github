@@ -173,3 +173,87 @@ test('starting another import clears an unlocked session before importing', asyn
   ]);
   assert.equal(renderer.inputClearCount, 1);
 });
+
+const PROPERTY_SURFACES = Object.freeze([
+  '#locked-view',
+  '#app-view',
+  '#search-panel',
+  '#date-panel',
+  '#image-overlay',
+  '#video-overlay',
+]);
+
+class SurfaceElement {
+  constructor() {
+    this.hidden = false;
+    this.disabled = false;
+    this.textContent = '';
+    this.value = '';
+  }
+}
+
+function createSurfaceDocument() {
+  const selectors = [
+    '#status',
+    '#package-file',
+    '#package-password',
+    '#unlock-button',
+    '#cancel-button',
+    ...PROPERTY_SURFACES,
+  ];
+  const elements = new Map(selectors.map((selector) => [selector, new SurfaceElement()]));
+  return {
+    elements,
+    querySelector(selector) {
+      return elements.get(selector) ?? null;
+    },
+  };
+}
+
+function seedUnauthorizedSurfaces(doc) {
+  doc.elements.get('#locked-view').hidden = true;
+  for (const selector of PROPERTY_SURFACES.slice(1)) doc.elements.get(selector).hidden = false;
+}
+
+function collectLockedSurfaceCounterexamples(doc, label, counterexamples) {
+  for (const [selector, expectedHidden] of PROPERTY_SURFACES.map((selector, index) => [selector, index !== 0])) {
+    const actual = doc.elements.get(selector).hidden;
+    if (actual !== expectedHidden) {
+      counterexamples.push(`${label} leaves ${selector} hidden=${actual}; expected ${expectedHidden}`);
+    }
+  }
+}
+
+// **Validates: Requirements 2.1, 2.2, 2.3**
+test('Property 1: failure and cancellation traces terminate in locked-only presentation', async () => {
+  const { UiRenderer } = await import('../public/assets/ui-renderer.js');
+  const counterexamples = [];
+
+  const startupDoc = createSurfaceDocument();
+  seedUnauthorizedSurfaces(startupDoc);
+  new SessionController(new UiRenderer(startupDoc));
+  collectLockedSurfaceCounterexamples(startupDoc, 'initial locked render', counterexamples);
+
+  const failedDoc = createSurfaceDocument();
+  const failedController = new SessionController(new UiRenderer(failedDoc), {
+    createSession: async () => { throw new Error('SYNTHETIC_FAILURE_DETAIL'); },
+  });
+  seedUnauthorizedSurfaces(failedDoc);
+  await failedController.beginImport(syntheticFile('failure.wcv'), 'password');
+  collectLockedSurfaceCounterexamples(failedDoc, 'failed import', counterexamples);
+
+  const cancelledDoc = createSurfaceDocument();
+  const pending = deferred();
+  const cancelledController = new SessionController(new UiRenderer(cancelledDoc), {
+    createSession: () => pending.promise,
+  });
+  seedUnauthorizedSurfaces(cancelledDoc);
+  const importResult = cancelledController.beginImport(syntheticFile('cancelled.wcv'), 'password');
+  collectLockedSurfaceCounterexamples(cancelledDoc, 'importing', counterexamples);
+  cancelledController.cancelImport();
+  collectLockedSurfaceCounterexamples(cancelledDoc, 'cancelled import', counterexamples);
+  pending.resolve(authenticatedSession());
+  await importResult;
+
+  assert.deepEqual(counterexamples, [], `lifecycle counterexamples:\n${counterexamples.join('\n')}`);
+});

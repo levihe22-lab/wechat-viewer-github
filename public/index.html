@@ -2,58 +2,118 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
-  <title>本地加密记录查看器</title>
+  <title>聊天记录查看器</title>
   <link rel="stylesheet" href="./assets/app.css">
 </head>
 <body>
-  <main class="shell">
-    <header class="page-header">
-      <p class="eyebrow">当前页面本地处理</p>
-      <h1>本地加密记录查看器</h1>
-      <p class="subtitle">在线打开网页后，主动选择设备上的加密包；每次打开均需重新导入并解锁。</p>
-    </header>
 
-    <section id="locked-view" class="card" aria-labelledby="unlock-title">
-      <h2 id="unlock-title">打开本地 WCV3 包</h2>
-      <p>解锁前，本页仅显示通用导入控件和隐私边界说明。</p>
+<!-- ═══ 锁定界面 ═══ -->
+<div id="locked-view">
+  <header class="lock-header">
+    <p class="eyebrow">当前页面本地处理</p>
+    <h1>本地加密记录查看器</h1>
+    <p class="subtitle">主动选择设备上的加密包并输入密码；每次打开均需重新导入并解锁。<span style="color:#07c160;font-weight:bold"> [v2026.07.18]</span></p>
+  </header>
 
-      <label for="package-file">本地加密包</label>
-      <input id="package-file" type="file" accept=".wcv">
+  <section class="card">
+    <label for="package-file">本地加密包</label>
+    <input id="package-file" type="file" accept=".wcv">
 
-      <label for="package-password">包密码</label>
-      <input id="package-password" type="password" autocomplete="off" spellcheck="false">
+    <label for="package-password">包密码</label>
+    <input id="package-password" type="password" autocomplete="off" spellcheck="false">
 
-      <div class="button-row">
-        <button id="unlock-button" type="button">在当前页面解锁</button>
-        <button id="cancel-button" class="secondary" type="button" hidden>取消</button>
+    <div class="button-row">
+      <button id="unlock-button" type="button">在当前页面解锁</button>
+      <button id="cancel-button" class="secondary" type="button" hidden>取消</button>
+    </div>
+    <p id="status" class="status" role="status">请选择本地 .wcv 文件并输入密码。</p>
+  </section>
+
+  <aside class="notice">
+    <h2>隐私与使用边界</h2>
+    <ul>
+      <li>所选包、密码和解锁结果仅在当前页面内存处理，不提供离线或跨刷新恢复。</li>
+      <li>刷新、关闭或离开页面后需重新选择本地包并输入密码。</li>
+      <li>网页源码公开；托管方可能记录访问 IP 等连接信息，因此不承诺绝对隐私。</li>
+    </ul>
+    <p>如需了解托管服务，请主动点击此<a href="https://docs.github.com/pages" target="_blank" rel="noopener noreferrer external">可见外部链接</a>。</p>
+  </aside>
+</div>
+
+<!-- ═══ 查看界面（解锁后显示）═══ -->
+<div id="app-view" hidden>
+  <div id="topbar">
+    <span id="topbar-name">聊天记录</span>
+    <div id="topbar-spacer"></div>
+    <button id="btn-menu" title="菜单">⋮</button>
+  </div>
+
+  <div id="menu-dropdown" hidden>
+    <div class="menu-item" id="menu-date">📅 日期跳转</div>
+    <div class="menu-item" id="menu-search">🔍 搜索记录</div>
+  </div>
+
+  <div id="search-bar" hidden>
+    <input type="text" id="search-input" placeholder="🔍 搜索聊天记录..." autocomplete="off">
+    <button id="btn-search-clear">✕</button>
+    <button id="btn-search-close">✕</button>
+  </div>
+
+  <div id="chat-area">
+    <div id="messages-container">
+      <div id="load-more" hidden>
+        <button id="btn-load-more">加载更多...</button>
       </div>
-      <p id="status" class="status" role="status" aria-live="polite">请选择本地 .wcv 文件并输入密码。</p>
-    </section>
+      <div id="messages-list"></div>
+    </div>
+    <div id="empty-hint">👈 正在加载聊天记录...</div>
+  </div>
 
-    <section id="unlocked-view" class="card" aria-labelledby="unlocked-title" hidden>
-      <div class="toolbar">
-        <div>
-          <p class="eyebrow">当前页面会话</p>
-          <h2 id="unlocked-title">本地包已解锁</h2>
-        </div>
-        <button id="lock-button" class="secondary" type="button">锁定并清除</button>
-      </div>
-      <div id="authenticated-content" aria-live="polite"></div>
-    </section>
+  <button id="lock-button" class="lock-btn" type="button">🔒 锁定</button>
+</div>
 
-    <aside class="notice" aria-labelledby="privacy-title">
-      <h2 id="privacy-title">隐私与使用边界</h2>
-      <ul>
-        <li>所选包、密码和解锁结果仅在当前页面内存中处理，不会提供离线使用或跨刷新恢复承诺。</li>
-        <li>刷新、关闭或离开页面后，需要重新选择本地包并输入密码。</li>
-        <li>本网页源码是公开的；托管方、浏览器或网络服务仍可能记录访问 IP 等连接信息，因此本页不承诺绝对隐私。</li>
-      </ul>
-      <p>如需了解托管服务，请由您主动点击此<a href="https://docs.github.com/pages" target="_blank" rel="noopener noreferrer external">可见外部链接</a>。页面不会因显示该链接而自动访问外部网站。</p>
-    </aside>
-  </main>
-  <script type="module" src="./assets/app.js"></script>
+<!-- ═══ 面板与预览 ═══ -->
+<div id="search-panel" hidden>
+  <div id="search-dialog">
+    <div id="search-dialog-header">
+      <span id="search-result-title">搜索结果</span>
+      <button id="search-panel-close">✕</button>
+    </div>
+    <div id="search-list"></div>
+  </div>
+</div>
+
+<div id="date-panel" hidden>
+  <div id="date-dialog">
+    <div id="date-header-row">
+      <button id="date-prev-month">◀</button>
+      <span id="date-year-month"></span>
+      <button id="date-next-month">▶</button>
+    </div>
+    <div id="date-weekday-row">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div id="date-grid"></div>
+    <div id="date-footer">
+      <button id="date-close-btn">关闭</button>
+      <button id="date-jump-latest">跳到最新</button>
+    </div>
+  </div>
+</div>
+
+<div id="image-overlay" hidden>
+  <span id="image-close">✕</span>
+  <img id="image-preview" src="" alt="预览">
+</div>
+
+<div id="video-overlay" hidden>
+  <span id="video-close">✕</span>
+  <video id="video-preview" controls playsinline></video>
+</div>
+
+<script type="module" src="./assets/app.js"></script>
 </body>
 </html>
