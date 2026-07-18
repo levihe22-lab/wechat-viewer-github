@@ -82,8 +82,11 @@ export class SessionController {
 
     this.#session = {
       file,
+      reader: candidate.reader,
       sessionKey: candidate.sessionKey,
+      header: candidate.header,
       manifest: candidate.manifest,
+      planner: candidate.planner,
       decryptedResources: candidate.decryptedResources instanceof Map
         ? candidate.decryptedResources
         : new Map(),
@@ -138,6 +141,9 @@ export class SessionController {
   #releaseReferences() {
     if (this.#session) {
       this.#session.reader?.clear?.();
+      this.#session.reader = null;
+      this.#session.header = null;
+      this.#session.planner = null;
       this.#session.decryptedResources.clear();
       this.#session.temporaryUrls.clear();
       this.#session.file = null;
