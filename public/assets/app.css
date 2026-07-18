@@ -1,0 +1,57 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #eef3f5;
+  color: #17212b;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+button, input { font: inherit; }
+
+.shell {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 5vw, 3rem);
+}
+
+.page-header { margin-bottom: 1.5rem; }
+h1 { margin: 0.2rem 0 0.6rem; font-size: clamp(1.9rem, 7vw, 2.8rem); line-height: 1.1; }
+h2 { margin: 0; font-size: 1.2rem; }
+p { line-height: 1.6; }
+.eyebrow { margin: 0; color: #146c5c; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.subtitle, .notice { color: #52606d; }
+
+.card, .notice {
+  border: 1px solid #d6e0e5;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.5rem #20304012;
+}
+
+.card { display: grid; gap: 0.8rem; padding: 1.3rem; }
+.card[hidden], [hidden] { display: none !important; }
+label { font-weight: 700; }
+input { width: 100%; border: 1px solid #91a2ad; border-radius: 0.65rem; padding: 0.75rem; background: transparent; color: inherit; }
+button { border: 0; border-radius: 0.65rem; padding: 0.75rem 1rem; background: #146c5c; color: #fff; font-weight: 750; cursor: pointer; }
+button:disabled { cursor: wait; opacity: 0.58; }
+.secondary { background: #4b5965; }
+.button-row, .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.status { min-height: 1.6em; margin: 0; color: #33434f; }
+.notice { margin-top: 1.25rem; padding: 1.3rem; font-size: 0.92rem; }
+.notice ul { padding-left: 1.2rem; }
+.notice li + li { margin-top: 0.5rem; }
+.notice a { color: #075fa8; font-weight: 700; }
+
+@media (max-width: 480px) {
+  .button-row, .toolbar { align-items: stretch; flex-direction: column; }
+  button { width: 100%; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { background: #10171d; color: #edf2f5; }
+  .card, .notice { border-color: #31404a; background: #172128; }
+  .subtitle, .notice { color: #b6c1c8; }
+  .status { color: #d3dde3; }
+  .notice a { color: #79baff; }
+}

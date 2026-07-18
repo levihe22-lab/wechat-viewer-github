@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2 (SHA-locked)
+
+      - uses: actions/setup-node@cdca7365b2da3b90bac0b8f4cecb3c27fd2b5d75 # v4.4.0 (SHA-locked)
+        with:
+          node-version: '22'
+
+      - name: Public boundary check
+        run: node scripts/verify-public-boundary.mjs
+
+      - name: Static security audit
+        run: node scripts/audit-public-shell.mjs
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Stage public artifact
+        run: node scripts/stage-public-artifact.mjs
+
+      - name: Leak scan staged artifact
+        run: node scripts/scan-deployment-artifact.mjs .stage-public
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@0252fc4ba7626f5093f2022e6bf4106dfb0ab21e # v3.0.2 (SHA-locked)
+        with:
+          path: .stage-public
+
+  deploy:
+    needs: verify
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@9ef92bd290ce02678f098196bdbe1b8d635281a6 # v4.0.6 (SHA-locked)

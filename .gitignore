@@ -1,0 +1,13 @@
+.stage-public/
+node_modules/
+*.wcv
+*.zip
+*.tar
+*.gz
+*.tgz
+*.7z
+*.rar
+private-data/
+test-fixtures/
+exports/
+.DS_Store

@@ -1,0 +1,13 @@
+{
+  "name": "wechat-viewer-public-shell",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "audit": "node scripts/verify-public-boundary.mjs && node scripts/audit-public-shell.mjs",
+    "stage": "node scripts/stage-public-artifact.mjs && node scripts/scan-deployment-artifact.mjs .stage-public",
+    "verify": "node scripts/verify-release.mjs"
+  },
+  "engines": {"node": ">=22.0.0"}
+}

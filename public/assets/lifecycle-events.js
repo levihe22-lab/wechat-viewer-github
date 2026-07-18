@@ -1,0 +1,1 @@
+export function bindLifecycle(controller,target=window){const clear=()=>controller.clear('lifecycle');target.addEventListener('pagehide',clear);target.addEventListener('beforeunload',clear);return()=>{target.removeEventListener('pagehide',clear);target.removeEventListener('beforeunload',clear);};}
